@@ -21,7 +21,8 @@
   var mouseProto = $.ui.mouse.prototype,
       _mouseInit = mouseProto._mouseInit,
       _mouseDestroy = mouseProto._mouseDestroy,
-      touchHandled;
+      touchHandled, touchTimer,
+      longTapTime = 750; // LongTap tie in ms
 
   /**
    * Simulate a mouse event based on a corresponding touch event
@@ -90,6 +91,14 @@
 
     // Simulate the mousedown event
     simulateMouseEvent(event, 'mousedown');
+
+    // Start longTap timer
+    touchTimer = setTimeout(function () {
+      if (! self._touchMoved) {
+        event.longTap = true;
+        self._touchEnd(event);
+      }
+    }, longTapTime);
   };
 
   /**
@@ -130,11 +139,19 @@
     // If the touch interaction did not move, it should trigger a click
     if (!this._touchMoved) {
 
-      // Simulate the click event
-      simulateMouseEvent(event, 'click');
+      // Check if it was a long tap or regular tap
+      if (event.longTap) {
+        // Simulate the right-click event
+        simulateMouseEvent(event, 'contextmenu');
+
+      } else {
+        // Simulate the click event
+        simulateMouseEvent(event, 'click');
+      }
     }
 
     // Unset the flag to allow other widgets to inherit the touch event
+    clearTimeout(touchTimer);
     touchHandled = false;
   };
 
